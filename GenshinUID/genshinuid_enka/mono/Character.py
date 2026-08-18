@@ -2,6 +2,8 @@ import re
 from copy import deepcopy
 from typing import Dict, List, Tuple, Optional
 
+from gsuid_core.i18n import t
+
 # from httpx import ConnectTimeout
 from gsuid_core.logger import logger
 from gsuid_core.utils.api.minigg.request import (
@@ -140,7 +142,7 @@ class Character:
             try:
                 weapon_raw_data = await get_weapon_info(weapon)
             except Exception as e:
-                logger.error(f"获取武器信息失败: {e}")
+                logger.error(t("log.genshinuid.msg_bf5747", e=e))
                 weapon_raw_data = -1
 
             if isinstance(weapon_raw_data, int) or isinstance(weapon_raw_data, List) or weapon_raw_data is None:
@@ -360,8 +362,32 @@ class Character:
             prop["baseArea"] = 1
             prop["powerPlus"] = 1
             prop["extraBonus"] = 0
-            prop["moonDmgBonus"] = 0
-            prop["moonExDmgBonus"] = 0
+            # 月曜：moon* 为历史字段，lunar* 为规范字段（无冒号）
+            prop["moonDmgBonus"] = 0  # 旧：月曜增伤
+            prop["moonExDmgBonus"] = 0  # 旧：月曜基础增伤
+            prop["lunarBaseDmgBonus"] = 0  # 月曜基础增伤
+            prop["lunarDmgBonus"] = 0  # 月曜增伤（通用）
+            prop["lunarElectroDmgBonus"] = 0  # 月感电增伤
+            prop["lunarBloomDmgBonus"] = 0  # 月绽放增伤
+            prop["lunarCrystallizeDmgBonus"] = 0  # 月结晶增伤
+            prop["lunarCritDmg"] = 0  # 月曜反应暴击伤害
+            prop["lunarBaseArea"] = 1  # 月曜大权区
+            prop["lunarAddDmg"] = 0  # 直伤/反应月曜羽毛区
+            prop["lunarElevate"] = 0  # 月曜擢升（通用，命座）
+            prop["lunarElectroElevate"] = 0  # 月感电擢升
+            prop["lunarBloomElevate"] = 0  # 月绽放擢升
+            prop["lunarCrystallizeElevate"] = 0  # 月结晶擢升
+            # 星烁反应（星超导 / 星扩散）
+            # stellarDmgBonus = 通用「星烁反应伤害」（两种都吃）
+            # stellarSpreadDmgBonus / stellarSuperconductDmgBonus = 仅对应子反应
+            prop["stellarBaseDmgBonus"] = 0
+            prop["stellarDmgBonus"] = 0
+            prop["stellarSpreadDmgBonus"] = 0
+            prop["stellarSuperconductDmgBonus"] = 0
+            prop["stellarCritDmg"] = 0
+            prop["stellarBaseArea"] = 1
+            prop["stellarAddDmg"] = 0
+            prop["stellarElevate"] = 0  # 星烁擢升（命座）
             if prop["baseHp"] + prop["addHp"] == prop["hp"]:
                 prop["exHp"] = prop["addHp"]
                 prop["exAtk"] = prop["addAtk"]
@@ -508,8 +534,24 @@ class Character:
                 char_element = avatarName2Element[char_name]
 
             # 判断是否是自己属性的叠加
+            # 星烁/月曜等特殊增伤属性名含 DmgBonus，不能按元素伤害过滤掉
             if "DmgBonus" in effect_attr:
-                if effect_attr.replace("DmgBonus", "") == char_element:
+                special_dmg_attrs = {
+                    "stellarDmgBonus",
+                    "stellarSpreadDmgBonus",
+                    "stellarSuperconductDmgBonus",
+                    "stellarBaseDmgBonus",
+                    "lunarDmgBonus",
+                    "lunarBaseDmgBonus",
+                    "lunarElectroDmgBonus",
+                    "lunarBloomDmgBonus",
+                    "lunarCrystallizeDmgBonus",
+                    "moonDmgBonus",
+                    "moonExDmgBonus",
+                }
+                if effect_attr in special_dmg_attrs:
+                    pass
+                elif effect_attr.replace("DmgBonus", "") == char_element:
                     effect_attr = "dmgBonus"
                 elif effect_attr == "physicalDmgBonus":
                     effect_attr = "physicalDmgBonus"
@@ -588,7 +630,14 @@ class Character:
                     prop[f"{attr}_{effect_attr}"] += effect_value
             prop[f"{effect_attr}"] += effect_value
 
-        logger.trace(f"{effect_attr} + {effect_value} 基于[{effect_base}]")
+        logger.trace(
+            t(
+                "log.genshinuid.effect_attr_effect_value_effect_base_ffaf5f",
+                effect_attr=effect_attr,
+                effect_value=effect_value,
+                effect_base=effect_base,
+            )
+        )
 
         return prop
 

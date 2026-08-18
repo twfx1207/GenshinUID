@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from gsuid_core.i18n import t
 from gsuid_core.logger import logger
 from gsuid_core.utils.error_reply import (
     UID_HINT,
@@ -14,20 +15,20 @@ from gsuid_core.utils.error_reply import (
     draw_error_img,
     get_error_type,
 )
-from gsuid_core.utils.api.mys.models import Expedition
-from gsuid_core.utils.database.models import GsBind, GsUser
-
-from ..utils.mys_api import mys_api
-from ..utils.image.convert import convert_img
-from ..utils.api.mys.models import (
+from gsuid_core.utils.api.mys.models import (
     FakeResin,
     DayilyTask,
+    Expedition,
     Expedition as WidgetExpedition,
     Transformer,
     WidgetResin,
     RecoveryTime,
     ArchonProgress,
 )
+from gsuid_core.utils.database.models import GsBind, GsUser
+
+from ..utils.mys_api import mys_api
+from ..utils.image.convert import convert_img
 from ..genshinuid_enka.to_data import get_enka_info
 from ..utils.fonts.genshin_fonts import (
     gs_font_20,
@@ -118,9 +119,9 @@ async def get_resin_img(bot_id: str, user_id: str):
             task.append(_draw_all_resin_img(img, uid, uid_index))
         await asyncio.gather(*task)
         res = await convert_img(img)
-        logger.info("[查询每日信息]绘图已完成,等待发送!")
+        logger.info(t("log.genshinuid.msg_3501d9"))
     except TypeError:
-        logger.exception("[查询每日信息]绘图失败!")
+        logger.exception(t("log.genshinuid.msg_04cc64"))
         res = "你绑定过的UID中可能存在过期CK~请重新绑定一下噢~"
 
     return res
